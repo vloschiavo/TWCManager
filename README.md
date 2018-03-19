@@ -8,7 +8,7 @@ I have a Tesla Model 3, two Powerwall 2s, and 6.5 kW of Solar panels.
 The idea is to be able to use my excess solar power, that would normally go to the grid, to charge my vehicle.
 
 Current status:  
--I haven't changed anything from cdragon's code yes.
+-I've changed the curl to pull stats from the Tesla Powerwall gateway on the local lan for grid power production/usage.
 
 Future plans:
 
