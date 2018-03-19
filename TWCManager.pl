@@ -3,6 +3,10 @@
 ################################################################################
 # Perl code and TWC protocol reverse engineering by Chris Dragon.
 #
+#######################################################
+# Modified by vloschiavo 3/18/18 #
+#######################################################
+#
 # Additional logs and hints provided by Teslamotorsclub.com users:
 #   TheNoOne, IanAmber, and twc.
 # Thank you!
@@ -212,6 +216,7 @@ my $fakeTWCID = "\x77\x77";
 my $masterSign = "\x77";
 my $slaveSign = "\x77";
 
+my $powerwallIP = "192.168.xxx.xxx";
 
 #
 # End configuration parameters
@@ -1548,24 +1553,32 @@ sub receive_slave_heartbeat
                 # used here. If we delay over 9ish seconds here, slave TWCs will
                 # decide we've disappeared and stop charging (or maybe it's more
                 # like 20-30 seconds - I didn't test carefully).
-                my $greenEnergyData = `curl -s -m 4 "http://127.0.0.1/history/export.csv?T=1&D=0&M=1&C=1"`;
+		# vloschiavo: Here I'm pulling JSON from the powerwall gateway
+                my $greenEnergyData = `curl -s -m 4 http://$powerwallIP/api/meters/aggregates`;
 
-                # In my case, $greenEnergyData will contain something like this:
-                #   MTU, Time, Power, Cost, Voltage
-                #   Solar,11/11/2017 14:20:43,-2.957,-0.29,124.3
-                # The only part we care about is -2.957 which is negative kWh
-                # currently being generated.
-                # When 0kWh is generated, the negative disappears so we make it
-                # optional in the regex below.
-                if($greenEnergyData =~ m~^Solar,[^,]+,-?([^, ]+),~m) {
-                    my $solarWh = int($1 * 1000);
+		# If we are getting good data from the curl, then decode the JSON
+		if($greenEnergyData =~ m~last_communication_time~m) {
+			# decode the JSON
+			my $thing = decode_json($greenEnergyData);
 
-                    # Watts = Volts * Amps
-                    # Car charges at 240 volts in North America so we figure out
-                    # how many amps * 240 = $solarWh and limit the car to that
-                    # many amps.
-                    $maxAmpsToDivideAmongSlaves = ($solarWh / 240)
-                                                + $greenEnergyAmpsOffset;
+			# extract the current power reading to and from the grid
+			my $solarWh = $thing->{site}{instant_power};
+			
+			#if we're producing more than 500 Watts, then remove the sign and continue.  Otherwise set to 0 so we don't charge.
+			if ( $solarWh < -500 ) {		
+				$solarWh=abs($solarWh);
+			} else {
+				# We have a positive value (using grid power) or production is very low.
+				$solarWh=0;
+			}
+
+			print "$solarWh\n $data" if ( $debugLevel >= 1 );
+
+			# Watts = Volts * Amps
+			# Car charges at 240 volts in North America so we figure out
+			# how many amps * 240 = $solarWh and limit the car to that
+			# many amps.
+			$maxAmpsToDivideAmongSlaves = ($solarWh / 240) + $greenEnergyAmpsOffset;
 
                     if($debugLevel >= 1) {
                         printf("%s: Solar generating %dWh so limit car charging to:\n"
