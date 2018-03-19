@@ -5,7 +5,10 @@ Currently this is a direct fork of cdragon's project that uses RS-485 to throttl
 THANK YOU cdragon for reverse engineering Tesla's Master-Slave protocol!
 
 I have a Tesla Model 3, two Powerwall 2s, and 6.5 kW of Solar panels.
-The idea is to be able to use your excess solar power, that would normally go to the grid, to go into your vehicle.
+The idea is to be able to use my excess solar power, that would normally go to the grid, to charge my vehicle.
+
+Current status:  
+-I haven't changed anything from cdragon's code yes.
 
 Future plans:
 
