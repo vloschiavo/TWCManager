@@ -1,0 +1,15 @@
+[Unit]
+Description=TWC Manager
+After=multi-user.target
+Wants=lighttpd.service
+Documentation=https://github.com/vloschiavo/TWCManager
+User=pi
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/su - pi -c "screen -dm -S TWCManager ~/src/TWCManager/TWCManager.pl"
+ExecStop=/bin/su - pi -c "screen -X -S TWCManager quit"
+
+[Install]
+WantedBy=multi-user.target
