@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 
 ################################################################################
-# Perl code and TWC protocol reverse engineering by Chris Dragon.
+# Perl code and TWC protocol 1 reverse engineering by Chris Dragon.
 #
-#######################################################
-# Modified by vloschiavo 3/18/18 #
-#######################################################
+################################################################################
+# Modified by vloschiavo 3/18/18 - Added support for Tesla Powerwall stats     #
+################################################################################
 #
 # Additional logs and hints provided by Teslamotorsclub.com users:
 #   TheNoOne, IanAmber, and twc.
@@ -75,6 +75,12 @@
 # figured out how to get its charge state by contacting Tesla's servers using
 # the same password you use in the Tesla phone app. Be very careful not to
 # expose that password because it allows unlocking and starting the car.
+
+################################################################################
+# Vince Loschiavo - I've added support for Tesla Powerwall 2 to monitor
+# energy output of your solar system.
+################################################################################
+
 
 ################################################################################
 # Overview of protocol TWCs use to load share
@@ -216,7 +222,46 @@ my $fakeTWCID = "\x77\x77";
 my $masterSign = "\x77";
 my $slaveSign = "\x77";
 
+# If enabled, this script will poll your local Tesla Powerwall 2 gateway
+# to monitor the current power going to and from the grid.
+
+my $enablePowerwall = 1;
+
+# Define the IP address of your local Powerwall.  You may need to do some 
+# investigation to determine the local IP address of your Powerwall gateway.
+# The gateway is the box that monitors and controls the flow of electricity
+# between your solar(if applicable), powerwalls, and the grid.  
+# The gateway also communicates with Tesla's servers to upload statistics 
+# periodically.  We can poll the gateway very frequently to get updated stats
+# in JSON format over http.  If enabled and configured this script will poll the
+# instantaneous grid power and use that as the green energy source.
+
+# Define the IP address of your Powerwall 2 gateway.  You can look at your local 
+# router's DHCP leases and look for one you don't recognize.  Alternatively,
+# If your subnet was 192.168.100.0/24 (192.168.100.0-192.168.100.255) then I'd 
+# suggest the following nmap command to narrow down the list.  Look for a system
+# identified as linux and a MAC address registered to Winsystems.  See example
+# below:
+# $ sudo apt-get update && sudo apt-get install -y nmap
+# $ nmap -sS -O -p80 192.168.100.0/24
+#
+# Sample nmap output:
+# Nmap scan report for 192.168.100.100		<------ your IP will likely be different
+# Host is up (0.00035s latency).
+# PORT   STATE SERVICE
+# 80/tcp open  http
+# MAC Address: 00:01:45:07:BE:EF (Winsystems)      <--- your mac will be different
+# Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+# Device type: general purpose
+# Running: Linux 3.X
+# OS CPE: cpe:/o:linux:linux_kernel:3
+# OS details: Linux 3.11 - 3.14
+# Network Distance: 1 hop
+
+# In the above example you should set $powerwallIP = "192.168.100.100";
+
 my $powerwallIP = "192.168.xxx.xxx";
+
 
 #
 # End configuration parameters
